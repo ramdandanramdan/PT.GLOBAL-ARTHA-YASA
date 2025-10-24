@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
+use App\Providers\RouteServiceProvider; // Wajib di-import
 
 class AuthenticatedSessionController extends Controller
 {
@@ -31,14 +32,29 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         $user = Auth::user();
+        
+        // Ambil role, LAKUKAN TRIM & LOWERCASE untuk perbandingan yang aman
+        $role = strtolower(trim($user->role)); 
 
-        // 3. Redirect berdasarkan role (Membandingkan string role untuk menghindari ErrorException)
-        if ($user->role && strtolower($user->role) === 'founder') {
-            return redirect()->route('founder.dashboard');
+        // 3. Redirect berdasarkan role menggunakan SWITCH
+        switch ($role) {
+            case 'founder':
+                return redirect()->intended(route('founder.dashboard'));
+            
+            case 'manager':
+                return redirect()->intended(route('manager.dashboard'));
+
+            case 'sales':
+                return redirect()->intended(route('sales.dashboard'));
+
+            case 'spg':
+                // ROLE SPG DIARAHKAN KE RUTE SPESIFIK
+                return redirect()->intended(route('spg.dashboard'));
+            
+            default:
+                // Jika role tidak cocok atau kosong
+                return redirect()->intended(RouteServiceProvider::HOME);
         }
-
-        // 4. Redirect default untuk user lain (misalnya, sales)
-        return redirect()->intended(route('dashboard'));
     }
 
     /**
