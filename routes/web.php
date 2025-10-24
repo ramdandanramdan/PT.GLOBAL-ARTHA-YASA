@@ -17,14 +17,24 @@ use App\Http\Controllers\Manager\StockController as ManagerStockController;
 use App\Http\Controllers\Manager\MonitoringController;
 
 // General/Shared Controllers (Sales/SPG/Umum)
-use App\Http\Controllers\SalesController;
+// OLD: use App\Http\Controllers\SalesController; 
+// OLD: use App\Http\Controllers\AbsensiController; // DIHAPUS DARI GLOBAL/SHARED
+// OLD: use App\Http\Controllers\TeamStockController; // DIHAPUS DARI GLOBAL/SHARED
+// OLD: use App\Http\Controllers\PerformanceController; // DIHAPUS DARI GLOBAL/SHARED
+
+// START NEW: Impor Controller Sales dari folder Sales
+use App\Http\Controllers\Sales\SalesController; // <-- INTI SALES
+use App\Http\Controllers\Sales\SalesAbsensiController; // <-- ISOLASI 100% SALES
+use App\Http\Controllers\Sales\SalesStockController; // <-- ISOLASI 100% SALES
+use App\Http\Controllers\Sales\SalesPerformanceController; // <-- ISOLASI 100% SALES
+
+// General/Shared Controllers yang tersisa
 use App\Http\Controllers\SpgController; 
-use App\Http\Controllers\AbsensiController; 
-use App\Http\Controllers\TeamStockController; 
-use App\Http\Controllers\PerformanceController; 
+use App\Http\Controllers\AbsensiController; // Digunakan oleh SPG di bagian bawah
+use App\Http\Controllers\TeamStockController; // Digunakan oleh SPG
+use App\Http\Controllers\PerformanceController; // Digunakan oleh SPG
 use App\Http\Controllers\SupportController; 
 use App\Http\Controllers\SpgActivityController; 
-// *** IMPOR BARU: Tambahkan InboxController di sini ***
 use App\Http\Controllers\InboxController; 
 
 /*
@@ -111,30 +121,38 @@ Route::middleware(['auth', EnsureRole::class . ':manager'])
 // === GRUP ROUTE UNTUK ROLE SALES & SPG ===
 // =========================================================================
 
-// --- 1. ROUTE KHUSUS SALES ---
+// --- 1. ROUTE KHUSUS SALES (TERISOLASI TOTAL) ---
 Route::middleware(['auth', EnsureRole::class . ':sales'])
     ->prefix('sales')
     ->name('sales.')
     ->group(function () {
-        // Dashboard Sales (Tautan Sidebar 1)
+        
+        // Tautan 1: Dashboard Sales
         Route::get('/dashboard', [SalesController::class, 'dashboard'])->name('dashboard');
         
-        // Stok Pribadi (Tautan Sidebar 3)
-        Route::get('/stock', [TeamStockController::class, 'showSalesStock'])->name('stock');
+        // Tautan 2: Absensi Lokasi 
+        // PENGGUNAAN CONTROLLER ISOLASI
+        Route::get('/absensi', [SalesAbsensiController::class, 'index'])->name('absensi.index'); 
+        
+        // Tautan 3: Stok Pribadi 
+        // PENGGUNAAN CONTROLLER ISOLASI
+        Route::get('/stock', [SalesStockController::class, 'index'])->name('stock');
         
         // Input Transaksi Penjualan Real-time (Aksi Cepat)
         Route::get('/transaction/create', [SalesController::class, 'createTransaction'])->name('transaction.create');
         Route::post('/transaction/store', [SalesController::class, 'storeTransaction'])->name('transaction.store');
         
-        // Target & Komisi (Tautan Sidebar 4)
-        Route::get('/performance', [PerformanceController::class, 'showSalesPerformance'])->name('performance');
+        // Tautan 4: Target & Komisi 
+        // PENGGUNAAN CONTROLLER ISOLASI
+        Route::get('/performance', [SalesPerformanceController::class, 'index'])->name('performance');
 
-        // Riwayat Transaksi Sales (Tautan Sidebar 5)
+        // Tautan 5: Riwayat Transaksi Sales
         Route::get('/history', [SalesController::class, 'history'])->name('history');
         Route::get('/transaction/history', [SalesController::class, 'history'])->name('transaction.history'); 
     });
 
-// --- 2. ROUTE KHUSUS SPG (TERMASUK ABSENSI & INBOX) ---
+// --- 2. ROUTE KHUSUS SPG (TIDAK BERUBAH) ---
+// Note: SPG masih menggunakan AbsensiController, TeamStockController, dan PerformanceController yang lama
 Route::middleware(['auth', EnsureRole::class . ':spg'])
     ->prefix('spg')
     ->name('spg.')
@@ -157,18 +175,14 @@ Route::middleware(['auth', EnsureRole::class . ':spg'])
         Route::get('/history', [SpgController::class, 'history'])->name('history');
         Route::get('/activity/history', [SpgController::class, 'history'])->name('activity.history'); 
 
-        // *** ROUTE BARU: INBOX PESAN (Tautan Sidebar 6) ***
+        // ROUTE BARU: INBOX PESAN (Tautan Sidebar 6)
         Route::get('/inbox', [InboxController::class, 'index'])->name('inbox.index'); 
 
-        // --- 3. ROUTE ABSENSI (SEKARANG KHUSUS SPG) ---
-        // Route ini akan menjadi /spg/absensi
+        // Absensi (Jika Anda tetap ingin SPG memiliki Absensi terpisah dari Sales)
         Route::prefix('absensi')->name('absensi.')->group(function () {
-            // Absensi Lokasi - Tautan Sidebar (Tautan Sidebar 2)
-            Route::get('/', [AbsensiController::class, 'index'])->name('index');
-            
-            // Aksi Form
-            Route::post('/check-in', [AbsensiController::class, 'checkIn'])->name('checkIn');
-            Route::post('/check-out', [AbsensiController::class, 'checkOut'])->name('checkOut');
+             Route::get('/', [AbsensiController::class, 'index'])->name('index');
+             Route::post('/check-in', [AbsensiController::class, 'checkIn'])->name('checkIn');
+             Route::post('/check-out', [AbsensiController::class, 'checkOut'])->name('checkOut');
         });
     });
 

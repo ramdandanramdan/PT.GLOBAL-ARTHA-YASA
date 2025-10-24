@@ -3,9 +3,14 @@
         class="flex flex-col md:grid md:grid-cols-2 items-center w-full max-w-5xl bg-white shadow-2xl rounded-2xl overflow-hidden">
 
         <div class="w-full px-8 py-14 flex justify-center bg-white">
-            <form method="POST" action="{{ route('login') }}" x-data="{ loading: false, showPassword: false }"
-                @submit.prevent="loading = true; $el.submit()"
-                {{-- Menggunakan prevent default untuk menunjukkan loading --}} class="w-full max-w-md relative">
+            <form method="POST" action="{{ route('login') }}" 
+                x-data="{ loading: false, showPassword: false }"
+                @submit.prevent="
+                    loading = true; 
+                    // Set timeout sebentar untuk menampilkan loading state sebelum submit
+                    setTimeout(() => $el.submit(), 100); 
+                "
+                class="w-full max-w-md relative">
 
                 @csrf
 
